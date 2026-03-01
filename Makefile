@@ -103,13 +103,18 @@ bench-fullfat-cpp:
 	@echo " C++ fullfat (clang++) — full rebuild"
 	@echo "===================================="
 	@rm -f $(FF_CPP_BIN) $(FF_CPP_OBJS)
-	@TIMEFORMAT='real %Rs  user %Us  sys %Ss'; \
+	@SLOC=$$(find $(FF_CPP_DIR) -type f \( -name '*.cpp' -o -name '*.hpp' \) | xargs cat | wc -l); \
+	START=$$(date +%s.%N); \
+	TIMEFORMAT='real %Rs  user %Us  sys %Ss'; \
 	time { \
 		$(CXX) $(CXXFLAGS) -I$(FF_CPP_DIR) -c $(FF_CPP_DIR)/config.cpp -o $(FF_CPP_DIR)/config.o && \
 		$(CXX) $(CXXFLAGS) -I$(FF_CPP_DIR) -c $(FF_CPP_DIR)/data.cpp -o $(FF_CPP_DIR)/data.o && \
 		$(CXX) $(CXXFLAGS) -I$(FF_CPP_DIR) -c $(FF_CPP_DIR)/main.cpp -o $(FF_CPP_DIR)/main.o && \
 		$(CXX) $(CXXFLAGS) -o $(FF_CPP_BIN) $(FF_CPP_OBJS); \
-	} 2>&1
+	} 2>&1; \
+	END=$$(date +%s.%N); \
+	RATE=$$(awk -v sloc=$$SLOC -v s=$$START -v e=$$END 'BEGIN {printf "%d", sloc / (e - s)}'); \
+	echo "$$SLOC lines => $$RATE lines/s"
 	@echo "--- verifying binary runs ---"
 	@$(FF_CPP_BIN) $(FF_CONFIG) $(FF_DATA) > /dev/null
 
@@ -119,8 +124,13 @@ bench-fullfat-rust:
 	@echo " Rust fullfat (cargo) — full rebuild"
 	@echo "===================================="
 	@cd $(FF_RUST_DIR) && $(CARGO) clean 2>/dev/null; true
-	@TIMEFORMAT='real %Rs  user %Us  sys %Ss'; \
-	cd $(FF_RUST_DIR) && time $(CARGO) build $(CARGOFLAGS) 2>&1
+	@SLOC=$$(find $(FF_RUST_DIR)/vendor $(FF_RUST_DIR)/src -name '*.rs' | xargs cat | wc -l); \
+	START=$$(date +%s.%N); \
+	TIMEFORMAT='real %Rs  user %Us  sys %Ss'; \
+	cd $(FF_RUST_DIR) && time $(CARGO) build $(CARGOFLAGS) 2>&1; \
+	END=$$(date +%s.%N); \
+	RATE=$$(awk -v sloc=$$SLOC -v s=$$START -v e=$$END 'BEGIN {printf "%d", sloc / (e - s)}'); \
+	echo "$$SLOC lines => $$RATE lines/s"
 	@echo "--- verifying binary runs ---"
 	@$(FF_RUST_BIN) $(FF_CONFIG) $(FF_DATA) > /dev/null
 
@@ -137,11 +147,16 @@ bench-fullfat-incr-cpp:
 		$(CXX) $(CXXFLAGS) -o $(FF_CPP_BIN) $(FF_CPP_OBJS); \
 	fi
 	@touch $(FF_CPP_DIR)/data.cpp
-	@TIMEFORMAT='real %Rs  user %Us  sys %Ss'; \
+	@SLOC=$$(cat $(FF_CPP_DIR)/data.cpp $(FF_CPP_DIR)/data.hpp $(FF_CPP_DIR)/vendor/nlohmann/json.hpp | wc -l); \
+	START=$$(date +%s.%N); \
+	TIMEFORMAT='real %Rs  user %Us  sys %Ss'; \
 	time { \
 		$(CXX) $(CXXFLAGS) -I$(FF_CPP_DIR) -c $(FF_CPP_DIR)/data.cpp -o $(FF_CPP_DIR)/data.o && \
 		$(CXX) $(CXXFLAGS) -o $(FF_CPP_BIN) $(FF_CPP_OBJS); \
-	} 2>&1
+	} 2>&1; \
+	END=$$(date +%s.%N); \
+	RATE=$$(awk -v sloc=$$SLOC -v s=$$START -v e=$$END 'BEGIN {printf "%d", sloc / (e - s)}'); \
+	echo "$$SLOC lines => $$RATE lines/s"
 
 bench-fullfat-incr-rust:
 	@echo ""
@@ -153,8 +168,13 @@ bench-fullfat-incr-rust:
 		cd $(FF_RUST_DIR) && $(CARGO) build $(CARGOFLAGS); \
 	fi
 	@touch $(FF_RUST_DIR)/src/data.rs
-	@TIMEFORMAT='real %Rs  user %Us  sys %Ss'; \
-	cd $(FF_RUST_DIR) && time $(CARGO) build $(CARGOFLAGS) 2>&1
+	@SLOC=$$(cat $(FF_RUST_DIR)/src/*.rs | wc -l); \
+	START=$$(date +%s.%N); \
+	TIMEFORMAT='real %Rs  user %Us  sys %Ss'; \
+	cd $(FF_RUST_DIR) && time $(CARGO) build $(CARGOFLAGS) 2>&1; \
+	END=$$(date +%s.%N); \
+	RATE=$$(awk -v sloc=$$SLOC -v s=$$START -v e=$$END 'BEGIN {printf "%d", sloc / (e - s)}'); \
+	echo "$$SLOC lines => $$RATE lines/s"
 
 verify-fullfat:
 	@echo "--- C++ fullfat output ---"
