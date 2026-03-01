@@ -1,0 +1,4 @@
+# Analysis configuration
+field = "temperature"
+threshold = 50.0
+output_path = "output.json"

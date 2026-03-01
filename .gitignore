@@ -1,2 +1,5 @@
 simple/cpp/main
 simple/rust/target/
+fullfat/cpp/fullfat-bench
+fullfat/cpp/*.o
+fullfat/rust/target/
